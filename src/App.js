@@ -9,7 +9,7 @@ function App() {
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loginStatus, setLoginStatus] = useState("");
+  const [loginStatus, setLoginStatus] = useState(false);
 
   axios.defaults.withCredentials = true;
 
@@ -19,20 +19,34 @@ function App() {
       console.log(response);
     })
   }
- 
+  
   const login = ()=>{
     axios.post("/login", { username, password})
     .then((response)=>{
-      if(response.data.message) setLoginStatus(response.data.message);
-      else setLoginStatus(response.data[0].username);
+      if(!response.data.auth) setLoginStatus(false);
+      else {
+        localStorage.setItem("token", response.data.token)
+        setLoginStatus(true);
+      }
+    })
+  }
+
+  const userAuth = ()=>{
+    axios.get("isUserAuth", {
+      headers: {
+        "x-access-token": localStorage.getItem('token')
+      }
+    }).then((response)=>{
+      console.log(response)
     })
   }
 
   useEffect(() => {
     
+    
     axios.get("login").then((response)=>{
       if(response.data.loggedIn)
-      setLoginStatus(response.data.user[0].username);
+      setLoginStatus(true);
     })
     
   }, []) 
@@ -52,7 +66,9 @@ function App() {
         <label>Username</label><input type="text" placeholder="Username ..." onChange={(e) => setUsername(e.target.value)} /><br />
         <label>Password</label><input type="text" placeholder="Password ..." onChange={(e) => setPassword(e.target.value)} /><br />
         <button onClick={login}>Login</button>
-        <h2>{loginStatus}</h2>
+        <h2>{loginStatus && (
+          <button onClick={userAuth}>Check If logged in</button>
+        )}</h2>
       </div>
 
     </div>
